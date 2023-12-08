@@ -1,84 +1,19 @@
 {
     "elements": [
         {
-            "text": "Fast perfekt!",
+            "text": "Gut gemacht, weiter so!",
+            "rating": "1",
+            "color": "green"
+        },
+        {
+            "text": "Bewege dich langsamer!",
             "rating": "0",
-            "color": "orange"
+            "color": "red"
         },
         {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
-        },
-        {
-            "text": "Gut gemacht, weiter so!",
-            "rating": "1",
-            "color": "green"
+            "text": "Bewege dich langsamer!",
+            "rating": "0",
+            "color": "red"
         },
         {
             "text": "Gut gemacht, weiter so!",

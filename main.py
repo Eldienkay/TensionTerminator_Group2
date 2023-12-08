@@ -55,22 +55,18 @@ def estimate_distance(pixel_width_current, actual_width, focal_length):
     return distance
 
 
-
 # Given data
-pixel_width_ref = 300  # pixel width in reference image
-average_head_width = 16
-actual_width_ref = 16  # actual width of the object (in centimeters)
+pixel_width_ref = 500  # pixel width in reference image
+average_head_width = 30
+actual_width_ref = 30 # actual width of the object (in centimeters)
 distance_ref = 70  # distance from camera in reference image (in centimeters)
-
-
-
 
 # Calculate the focal length using the reference image
 focal_length = calculate_focal_length(pixel_width_ref, actual_width_ref, distance_ref)
 
 # Example usage
-# Suppose in a current frame, the pixel width of the object is 200 pixels
-pixel_width_current = 0
+# Suppose in a current frame, the pixel width of the object is 500 pixels
+pixel_width_current = 500
 
 # Estimate the distance
 estimated_distance = estimate_distance(pixel_width_current, actual_width_ref, focal_length)
@@ -86,34 +82,53 @@ def detect_head_top(frame):
     if results.pose_landmarks:
         landmarks = results.pose_landmarks.landmark
 
-        # Original ear landmarks
-        left_ear = landmarks[mp_pose.PoseLandmark.LEFT_EAR]
-        right_ear = landmarks[mp_pose.PoseLandmark.RIGHT_EAR]
+        # Landmarks for shoulders
+        left_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
+        right_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER]
 
-        # Adjust these landmarks slightly outward
-        adjustment_factor = 0.1  # This factor determines how much the landmarks are adjusted outward
-        adjusted_left_x = left_ear.x - adjustment_factor * abs(left_ear.x - right_ear.x)
-        adjusted_right_x = right_ear.x + adjustment_factor * abs(left_ear.x - right_ear.x)
+        # Landmarks for eyes to approximate forehead position
+        left_eye = landmarks[
+            mp_pose.PoseLandmark.LEFT_EYE_INNER] if 'LEFT_EYE_INNER' in mp_pose.PoseLandmark.__members__ else landmarks[
+            mp_pose.PoseLandmark.LEFT_EYE]
+        right_eye = landmarks[
+            mp_pose.PoseLandmark.RIGHT_EYE_INNER] if 'RIGHT_EYE_INNER' in mp_pose.PoseLandmark.__members__ else \
+        landmarks[mp_pose.PoseLandmark.RIGHT_EYE]
 
-        # Calculate the center position for the top of the head
-        head_x = int((adjusted_left_x + adjusted_right_x) / 2 * frame.shape[1])
-        head_y = int((left_ear.y + right_ear.y) / 2 * frame.shape[0])
+        # Calculate midpoint between eyes as an approximation for the forehead
+        forehead_x = (left_eye.x + right_eye.x) / 2
+        forehead_y = (left_eye.y + right_eye.y) / 2
 
-        # Calculate the adjusted width of the head
-        head_width = int(abs(adjusted_left_x - adjusted_right_x) * frame.shape[1])
+        # Calculate centroid using these landmarks
+        head_x = int((left_shoulder.x + right_shoulder.x + forehead_x) / 3 * frame.shape[1])
+        head_y = int((left_shoulder.y + right_shoulder.y + forehead_y) / 3 * frame.shape[0])
 
-        # Draw for visualization
-        '''cv2.circle(frame, (head_x, head_y), 5, (0, 255, 0), -1)
-        cv2.line(frame, (int(adjusted_left_x * frame.shape[1]), int(left_ear.y * frame.shape[0])),
-                 (int(adjusted_right_x * frame.shape[1]), int(right_ear.y * frame.shape[0])), (255, 0, 0), 2)'''
+        # Adjusted head width (can be refined)
+        head_width = int(abs(left_shoulder.x - right_shoulder.x) * frame.shape[1])
+
+        # Draw the center of the head
+        cv2.circle(frame, (head_x, head_y), 5, (0, 255, 0), -1)
 
         return head_x, head_y, head_width
 
     return None, None, None
 
 
-def main():
+def draw_landmarks_with_annotations(frame, results):
+    if results.pose_landmarks:
+        for id, landmark in enumerate(results.pose_landmarks.landmark):
+            # Calculate the x and y coordinates
+            x = int(landmark.x * frame.shape[1])
+            y = int(landmark.y * frame.shape[0])
 
+            # Draw a small circle at the landmark position
+            cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+
+            # Annotate the landmark
+            landmark_name = mp_pose.PoseLandmark(id).name
+            cv2.putText(frame, landmark_name, (x + 5, y + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
+
+def main():
     # Initialize a list to store the last 3 measurements
     recent_measurements = deque(maxlen=5)
     frame_counter = 0
@@ -124,6 +139,8 @@ def main():
     movement_frame_counts = []
     movement_data = {"elements": []}  # JSON structure
     latest_movement_result = {"text": "", "color": "white"}
+    consecutive_frames_over_100 = 0
+    consecutive_frames_under_70 = 0
 
     video_path = select_video_file()
 
@@ -144,63 +161,55 @@ def main():
 
         # Check if head_width_pixels is within the specified range
         if head_width_pixels is not None:
-            if video_path == "C:/Users/Daniel/OneDrive/Dokumente/GitHub/TensionTerminator_Group2/videos/Duo_balls_Lower_0.mp4":
-                if head_width_pixels < 170:
-                    head_width_pixels = 170
-                elif head_width_pixels > 340:
-                    head_width_pixels = 340
+            # Check if head_width_pixels is within the specified range to avoid temporary inaccuracies to falsify the data
+            if head_width_pixels < 250:
+                head_width_pixels = 250
+            elif head_width_pixels > 500:
+                head_width_pixels = 500
             # Add the measurement to the deque
             recent_measurements.append(head_width_pixels)
 
             # Update the distance every 3 frames
-            if frame_counter % 5 == 0 and len(recent_measurements) == recent_measurements.maxlen:
+            if frame_counter % 1 == 0 and len(recent_measurements) == recent_measurements.maxlen:
                 delayed_width_pixels = recent_measurements[0]
                 last_known_distance = estimate_distance(delayed_width_pixels, actual_width_ref, focal_length)
 
-        # State machine for counting up and down movements
+        # Inside your main loop or function where you update the state
         if last_known_distance is not None:
-            if video_path == "C:/Users/Daniel/OneDrive/Dokumente/GitHub/TensionTerminator_Group2/videos/Duo_balls_Lower_0.mp4":
-                if current_state == 'up' and last_known_distance > 120:
-                    current_state = 'down'
-                    # Do not reset frames_since_last_movement here
-                elif current_state == 'down' and last_known_distance < 90:
-                    current_state = 'up'
-                    movement_count += 1  # Increment movement count on a full up movement
-                    movement_frame_counts.append(frames_since_last_movement)
+            if last_known_distance > 100:
+                consecutive_frames_over_100 += 1
+                consecutive_frames_under_70 = 0  # Reset this counter as the condition is not met
+            elif last_known_distance < 90:
+                consecutive_frames_under_70 += 1
+                consecutive_frames_over_100 = 0  # Reset this counter as the condition is not met
+            else:
+                # Reset both counters if neither condition is met
+                consecutive_frames_over_100 = 0
+                consecutive_frames_under_70 = 0
 
-                    # Evaluate the movement speed and update JSON object
-                    if frames_since_last_movement < 35:
-                        latest_result = {"text": "Bewege dich langsamer!", "rating": "0", "color": "red"}
-                    elif frames_since_last_movement > 70:
-                        latest_result = {"text": "Fast perfekt!", "rating": "0.5", "color": "orange"}
-                    else:
-                        latest_result = {"text": "Gut gemacht, weiter so!", "rating": "1", "color": "green"}
+            # Now update the state transitions
+            if current_state == 'up' and consecutive_frames_over_100 >= 2 and frames_since_last_movement >= 14:
+                current_state = 'down'
+                # Do not reset consecutive_frames_over_100 here
+            elif current_state == 'down' and consecutive_frames_under_70 >= 2 and frames_since_last_movement >= 28:
+                current_state = 'up'
+                movement_count += 1  # Increment movement count on a full up movement
+                movement_frame_counts.append(frames_since_last_movement)
+                # Reset consecutive_frames_under_70 here if you want to require 6 new frames under 70 after transitioning to 'up'
+                consecutive_frames_under_70 = 0
 
-                    movement_data["elements"].append(latest_result)
-                    latest_movement_result = latest_result
-                    frames_since_last_movement = 0
+                # Evaluate the movement speed and update JSON object
+                # Between 36 and 72 frames is considered good speed to us (between 1.2 and 2.4 seconds with 30 frames7s videos)
+                if frames_since_last_movement < 37:
+                    latest_result = {"text": "Bewege dich langsamer!", "rating": "0", "color": "red"}
+                elif frames_since_last_movement > 71:
+                    latest_result = {"text": "Fast perfekt!", "rating": "0.5", "color": "orange"}
+                else:
+                    latest_result = {"text": "Gut gemacht, weiter so!", "rating": "1", "color": "green"}
 
-            elif video_path == "C:/Users/Daniel/OneDrive/Dokumente/GitHub/TensionTerminator_Group2/videos/duo_balls_upper_01.mp4":
-                if current_state == 'up' and last_known_distance > 400:
-                    current_state = 'down'
-                elif current_state == 'down' and last_known_distance < 250 and ((frames_since_last_movement > 48 and movement_count >= 1) or (frames_since_last_movement > 80 and movement_count == 0)):
-                    current_state = 'up'
-                    movement_count += 1  # Increment movement count on a full up movement
-                    movement_frame_counts.append(frames_since_last_movement)
-
-                    # Evaluate the movement speed and update JSON object
-                    if frames_since_last_movement < 40:
-                        latest_result = {"text": "Bewege dich langsamer!", "rating": "0", "color": "red"}
-                    elif frames_since_last_movement > 70:
-                        latest_result = {"text": "Fast perfekt!", "rating": "0.5", "color": "orange"}
-                    else:
-                        latest_result = {"text": "Gut gemacht, weiter so!", "rating": "1", "color": "green"}
-
-                    movement_data["elements"].append(latest_result)
-                    latest_movement_result = latest_result
-                    frames_since_last_movement = 0
-
-
+                movement_data["elements"].append(latest_result)
+                latest_movement_result = latest_result
+                frames_since_last_movement = 0
 
         # Display the movement count and frame count since last movement
         cv2.putText(frame, f"Up/Down Movements: {movement_count}", (50, 100),
