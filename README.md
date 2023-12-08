@@ -18,7 +18,6 @@ This technical report covers the TensionTerminator_Group2 project, specifically 
 1. Clone the repository from GitHub:
    ```
    git clone https://github.com/Eldienkay/TensionTerminator_Group2.git
-   git checkout Duo_balls_distance
    ```
 
 2. Install required Python libraries:
@@ -36,11 +35,11 @@ This technical report covers the TensionTerminator_Group2 project, specifically 
 
 - Processes a selected video file to detect human movements (up and down movements).
 - Counts these movements and displays the count in real-time on the video.
-- Integrates with `movement_data.json` to store and potentially display movement data. Green font and real time remark for (almost) right up- and down movements, orange font and remark for almost right movement. Text can altered to concrete countings (e.g. up - and down movements >= 5 and <= 11 are right, too fast movements are wrong)
+- Integrates with `movement_data.json` to store and potentially display movement data. Green font and real time remark for (almost) right up- and down movements, orange font and remark for almost right movement. Text can be altered to concrete countings (e.g. up - and down movements >= 5 and <= 11 are right, too fast movements are wrong)
 
 ### Technical Specifications
 
-- **Movement Detection**: Uses MediaPipe's pose estimation to detect human poses in each frame of the video.
+- **Movement Detection**: Uses MediaPipe and OpenCV's pose estimation to detect human poses in each frame of the video.
 - **Movement Counting**: A specific algorithm detects up and down movements and increments a counter accordingly.
 - **Data Integration**: Movement data is written to `movement_data.json`, allowing for persistence and later analysis.
 
@@ -80,6 +79,6 @@ This technical report covers the TensionTerminator_Group2 project, specifically 
 
 ### Modifying the Code
 
-- To alter movement detection logic, modify the relevant sections in `HelperFunctions.py` or the movement_data.json.
-- movement_data.json is the exchange file for the app and can be adapted 
+- To alter movement detection logic, modify the relevant sections in `HelperFunctions.py` or `main.py`.
+- `movement_data.json` is the exchange file for the app and is currently overwritten everytime a video is played 
 - For changes in how movement data is displayed or stored, update the respective sections in `main.py`.
