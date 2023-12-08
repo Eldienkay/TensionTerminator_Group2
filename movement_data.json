@@ -1,0 +1,34 @@
+{
+    "elements": [
+        {
+            "text": "Gut gemacht, weiter so!",
+            "rating": "1",
+            "color": "green"
+        },
+        {
+            "text": "Bewege dich langsamer!",
+            "rating": "0",
+            "color": "red"
+        },
+        {
+            "text": "Bewege dich langsamer!",
+            "rating": "0",
+            "color": "red"
+        },
+        {
+            "text": "Gut gemacht, weiter so!",
+            "rating": "1",
+            "color": "green"
+        },
+        {
+            "text": "Gut gemacht, weiter so!",
+            "rating": "1",
+            "color": "green"
+        },
+        {
+            "text": "Gut gemacht, weiter so!",
+            "rating": "1",
+            "color": "green"
+        }
+    ]
+}
